@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>北印度生存指南：德里到恒河</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@500;900&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0B0D10; --panel:#14181D; --panel2:#1B2128; --ink:#EDEFF2; --muted:#98A1AD; --line:#2A313A;
+  --hp:#58C24A; --money:#F4C430; --warn:#E5484D; --gut:#F29D38; --alert:#4BA3F5; --good:#6FCF97;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --num:"Oswald","Noto Sans SC","PingFang SC",system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.75}
+main{max-width:760px;margin:0 auto;padding:0 0 64px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--money);outline-offset:2px}
+
+/* game screen */
+.screen{position:relative;width:100%;aspect-ratio:4/3;max-height:62vh;overflow:hidden;background:#000}
+#bg{position:absolute;inset:0;transition:filter .9s}
+#bg svg,#bg img{width:100%;height:100%;display:block;object-fit:cover;animation:fadein .6s ease}
+.screen::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.5) 100%),linear-gradient(to bottom,rgba(0,0,0,.4),transparent 24%,transparent 68%,rgba(0,0,0,.6))}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.hud{position:absolute;z-index:2;text-shadow:0 1px 2px #000}
+.mission{top:10px;left:10px;max-width:54%;background:rgba(0,0,0,.74);padding:6px 10px;font-size:12.5px;line-height:1.5;border-left:3px solid var(--money);text-shadow:none}
+.mission b{display:block;color:var(--money);font-weight:900}
+.vitals{top:10px;right:10px;width:38%;max-width:210px;display:grid;grid-template-columns:auto 1fr;gap:3px 6px;align-items:center;font-size:10.5px;font-weight:900;line-height:1}
+.hpbar{position:relative;height:6px;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.3)}
+.hpbar.big{height:13px}
+.hpbar i{display:block;height:100%;transition:width .5s}
+.hpbar em{position:absolute;right:4px;top:0;line-height:11px;font:700 10px/11px var(--num);font-style:normal;text-shadow:0 0 2px #000,0 0 2px #000}
+.low i{background:var(--warn) !important;animation:blink .9s steps(2) infinite}
+@keyframes blink{50%{opacity:.35}}
+.money{grid-column:1/-1;justify-self:end;margin-top:3px;background:rgba(0,0,0,.74);color:var(--money);font:700 19px/1.35 var(--num);padding:0 9px;letter-spacing:.03em;text-shadow:none}
+.money.low{color:var(--warn)}
+.minimap{left:10px;bottom:10px;width:24%;max-width:132px;min-width:84px;aspect-ratio:1;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,.75);box-shadow:0 0 0 2px rgba(0,0,0,.6);background:#1b2026}
+.minimap svg{width:100%;height:100%;display:block}
+.place{right:12px;bottom:10px;max-width:66%;text-align:right;font-weight:900;font-style:italic;font-size:clamp(20px,5.6vw,32px);line-height:1.15}
+.place small{display:block;font-size:12px;font-weight:500;font-style:normal;opacity:.92;margin-top:2px}
+.banner{position:absolute;inset:0;z-index:3;display:none;align-items:center;justify-content:center;text-align:center;font-weight:900;font-size:clamp(30px,9vw,60px);letter-spacing:.1em;line-height:1.2;text-shadow:0 3px 0 #000,0 0 28px rgba(0,0,0,.9);padding:0 12px}
+.banner small{display:block;font-size:.34em;letter-spacing:.3em;color:#fff;opacity:.9}
+.screen.fail .banner{display:flex;color:var(--warn)}
+.screen.fail #bg{filter:grayscale(1) brightness(.5) contrast(1.15)}
+.screen.pass .banner{display:flex;color:var(--money)}
+.screen.fail .place,.screen.pass .place{display:none}
+
+/* text + choices */
+#stage{padding:12px 12px 0}
+.panel{background:var(--panel);border-left:3px solid var(--line);border-radius:4px;padding:16px}
+.panel p{margin:0 0 .9em}
+.panel p:last-child{margin-bottom:0}
+.when{color:var(--money);font-size:12.5px;font-weight:900;margin-bottom:.4em !important}
+.opts{display:grid;gap:8px;margin-top:10px}
+.opt{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:10px 12px;font-size:15px;font-weight:500;line-height:1.45}
+.opt:hover:not(:disabled){border-color:var(--money);background:var(--panel2)}
+.opt small{display:block;color:var(--muted);font-size:12.5px;margin-top:1px}
+.opt:disabled{opacity:.42;cursor:not-allowed}
+.key{font:700 15px/1 var(--num);min-width:30px;height:30px;display:inline-grid;place-items:center;border:2px solid currentColor;border-radius:5px;padding:0 6px;box-shadow:0 2px 0 currentColor}
+.go{display:inline-flex;align-items:center;gap:10px;background:var(--money);color:#111;border:0;border-radius:4px;padding:9px 18px 11px 10px;font-weight:900;font-size:16px;margin-top:16px}
+.go .key{font-size:12px;height:26px}
+.deltas{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0;padding:0;list-style:none;font-size:13px}
+.deltas li{border:1.5px solid currentColor;border-radius:3px;padding:0 9px;font-weight:900;font-family:var(--num)}
+.deltas .up{color:var(--good)} .deltas .down{color:var(--warn)}
+.lesson{border-left:3px solid var(--money);padding-left:12px;font-size:14.5px;line-height:1.7;color:#D5D9DE;margin-top:14px !important}
+.note{font-size:14px;color:var(--warn)}
+.prep label{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);font-size:15px;line-height:1.5;cursor:pointer}
+.prep input{width:20px;height:20px;margin-top:3px;accent-color:var(--money);flex:none}
+.prep small{display:block;color:var(--muted);font-size:13px}
+.lessons{padding-left:1.2em;font-size:14.5px;line-height:1.7;color:#D5D9DE}
+.lessons li{margin-bottom:.5em}
+footer{font-size:12px;color:var(--muted);margin-top:22px;padding:0 14px;line-height:1.6}
+.snd{position:fixed;right:10px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:5;background:rgba(0,0,0,.8);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:5px 12px;font-size:12.5px}
+@media (min-width:760px){ main{padding-top:16px} .mission{font-size:14px} .vitals{font-size:12px} }
+@media (prefers-reduced-motion:reduce){.hpbar i{transition:none}#bg svg,#bg img{animation:none}.low i{animation:none}#bg{transition:none}}
+</style>
+</head>
+<body>
+<button id="snd" class="snd">关闭声音</button>
+<main>
+  <div class="screen" id="screen">
+    <div id="bg" aria-hidden="true"></div>
+    <div class="hud mission" id="mission"></div>
+    <div class="hud vitals" id="stats" aria-live="polite"></div>
+    <div class="hud minimap" id="minimap" aria-hidden="true"></div>
+    <div class="hud place" id="place"></div>
+    <div class="banner" id="banner"></div>
+  </div>
+  <div id="stage"></div>
+  <footer>原型版本。事件改编自常见的旅行安全提醒，概率和金额是占位数值，尚未按真实资料校准。这是行前教育工具，不能替代官方领事提醒和你自己的判断。键盘可用 A / B / C 选择，空格继续。</footer>
+</main>
+
+<script>
+const STOPS = ["机场","旅馆","火车站","集市","列车","阿格拉","恒河","药店"];
+let s;
+
+function fresh(){
+  return {budget:1400,gut:100,stamina:100,alert:50,i:-1,flags:{},lessons:[]};
+}
+const clamp = v => Math.max(0,Math.min(100,v));
+const scam = p => s.alert < 30 ? Math.min(1,p*2) : p;
+const hit = p => Math.random() < p;
+function theft(amount){            // 保险赔付一半大额损失
+  if(s.flags.insurance && amount >= 500) return {loss:amount/2, note:"旅行保险赔回了一半损失。"};
+  return {loss:amount, note:""};
+}
+
+const NODES = [
+{
+  name:"德里机场", hi:"दिल्ली हवाई अड्डा", en:"Delhi Airport", when:"第 1 天，凌晨 1 点",
+  scene:["你推着行李走出到达大厅。三十多度的热浪和十几个喊着“Taxi, my friend”的司机一起扑过来。","旅馆在帕哈甘吉，二十公里外。"],
+  options:()=>[
+    {label:"去大厅里的预付费出租车柜台", hint:"先付钱拿小票，价格固定，90 元", cost:90,
+     run:()=>({text:"柜台给了你一张写着车牌号的小票。司机一路没说话，四十分钟后把你放在旅馆门口。", d:{budget:-90},
+       lesson:"深夜抵达时，机场内的预付费柜台是最省心的选择：价格固定，车牌有记录。"})},
+    {label:"跟报价最低的那位司机走", hint:"他开价只有柜台的一半",
+     run:()=>{
+       if(hit(scam(.1))){
+         const t = theft(s.budget);
+         return {text:"车没有开往市区。司机拐下高速，在一段没有路灯的土路上停了车，另一个男人拉开了后门。<br><br>天亮的时候，一位卡车司机在路边发现了你。护照、手机和钱都没了，你身上有伤。"+t.note, d:{budget:-t.loss,stamina:-100},
+           lesson:"这是这个选择的最坏情况：不常见，但真实发生过，而且没有补救的机会。深夜抵达时只坐有登记的车，就是为了排除它。",
+           over:{title:"行程终止",bg:"walk",lead:"你在医院做了笔录，使馆的工作人员帮你补办了旅行证件。三天后，你坐上了回国的航班。"}};
+       }
+       s.flags.lodged = true;
+       return {text:"开到半路，司机打了个电话，然后回头说：“你订的那家旅馆昨天关门了。我认识一家更好的。”你说要去原来的地址，他摇头，说那片街区晚上封路。车已经开进了一条你在地图上找不到的小街。<br><br>房价是原来的四倍，前台收走了你的护照“登记”，第二天早上才还。", d:{budget:-430,alert:+10},
+         lesson:"“你的旅馆关门了 / 着火了 / 那条路封了”是德里最经典的开场骗局。一旦上了没有登记的车，去哪里就不由你决定了。"};
+     }},
+    {label:"在机场坐到天亮，再搭地铁进城", hint:"最便宜，但今晚别想睡了",
+     run:()=>({text:"你在到达厅的金属椅上半睡半醒坐了四个小时，抱着背包。五点多，第一班机场快线把你送进了市区。", d:{budget:-10,stamina:-15,alert:+10},
+       lesson:"在机场等到天亮是很多独行旅客的做法：花体力，换来白天抵达陌生街区。"})}
+  ]
+},
+{
+  name:"帕哈甘吉", hi:"पहाड़गंज", en:"Paharganj", when:"第 1 天，清晨",
+  skip:()=>s.flags.lodged,
+  scene:["背包客聚集的主街刚刚醒来，卷帘门一扇扇拉起，霓虹招牌还没关。","你需要一个放行李、洗澡、睡几个小时的地方。"],
+  options:()=>[
+    {label:"12 人间青旅床位，40 元", hint:"没有储物柜，背包塞在床底",
+     run:()=>{
+       const t=theft(Math.min(s.budget,300));
+       return {text:"上铺的人凌晨四点开始收拾行李，塑料袋响了半个小时。你后来睡得很沉。<br><br>醒来的时候，背包侧袋的拉链开着，里面的现金不见了。前台耸了耸肩，说他们不负责保管贵重物品。", d:{budget:-40-t.loss,stamina:+10,alert:+10},
+         lesson:"多人间里，现金和证件要贴身放，或者自带挂锁用储物柜。没有储物柜的床位，省下的房费迟早要还回去。"};
+     }},
+    {label:"带锁的单间，180 元", hint:"风扇、冷水，但门能反锁", cost:180,
+     run:()=>({text:"房间只比床大一圈，墙皮有点掉。你把门反锁，行李放在床边，一觉睡到九点。", d:{budget:-180,stamina:+25},
+       lesson:"住宿上最值得花钱买的是一扇能反锁的门，其次才是空调和热水。"})},
+    {label:"有空调和热水的酒店，420 元", hint:"超过你预算的三分之一", cost:420,
+     run:()=>({text:"热水、白床单、遮光窗帘。你睡了这趟旅程里最好的一觉。", d:{budget:-420,stamina:+40},
+       lesson:"休息好了，后面每一个判断都会更清醒。问题只是你的预算撑不撑得住。"})}
+  ]
+},
+{
+  name:"新德里火车站", hi:"नई दिल्ली", en:"New Delhi", when:"第 1 天，上午",
+  scene:["你要买去阿格拉的火车票。刚走到站前广场，一个戴着工牌的男人拦住你。","“外国人售票处搬走了。我带你去官方办公室，很近。”"],
+  options:()=>[
+    {label:"出示手机里的电子票，直接进站", hint:s.flags.ticket?"你出发前已在官方 App 订好":"需要在行前准备里提前订票", disabled:!s.flags.ticket,
+     run:()=>({text:"你晃了晃手机。他看了一眼，转身去找下一个人了。", d:{},
+       lesson:"提前在官方渠道订票，可以整个跳过车站周边的“热心人”。"})},
+    {label:"谢谢他，自己上二楼找国际游客售票处", hint:"它一直在站内，没有搬过",
+     run:()=>({text:"他跟了你二十米，反复说那里关门了。二楼的售票处开着，冷气很足，你排了半小时队，按票面价买到了票。", d:{budget:-80,alert:+5},
+       lesson:"国际游客售票处在车站内部。任何人告诉你它“搬了、关了、在街对面”，都不用理会。"})},
+    {label:"跟他走", hint:"他有工牌，看起来很正式",
+     run:()=>({text:"所谓的办公室是街对面一家旅行社。工作人员说今天的票都卖完了，只剩“特殊配额”。票是真的，只是价格贵了七倍。", d:{budget:-600,alert:+10},
+       lesson:"工牌谁都能做。车站外的“官方办公室”几乎都是赚佣金的旅行社。"})}
+  ]
+},
+{
+  name:"月光集市", hi:"चाँदनी चौक", en:"Chandni Chowk", when:"第 1 天，中午",
+  scene:["旧德里的窄巷里，香料、油炸面团和摩托车尾气的味道混在一起。头顶的电线缠成一团。","你从早上到现在什么都没吃。"],
+  options:()=>[
+    {label:"本地人排着长队的现炸摊位", hint:"咖喱角刚从油锅里捞出来",
+     run:()=>({text:"你排了十分钟。咖喱角烫得拿不住，酸豆酱很辣。旁边的大叔看你吃得满头汗，笑着递来一张纸巾。<br><br>傍晚，你的肚子开始咕噜作响，一晚上跑了四趟厕所。本地人吃了没事的东西，你的肠胃还不认识。", d:{budget:-10,gut:-35,stamina:+15},
+       lesson:"选现做、高温、本地人排队的摊位，能避开最严重的食物中毒。但刚到的头几天，陌生的菌群加上重油重香料，外国人的肠胃多半还是要闹一场，区别只在轻重。"})},
+    {label:"切好的水果拼盘，加一杯加冰的甘蔗汁", hint:"天太热了，想吃点凉的",
+     run:()=>{ s.budget=Math.max(0,s.budget-8); s.stamina=clamp(s.stamina+10); s.gut=clamp(s.gut-45); return {sub:NIGHT}; }},
+    {label:"找一家有空调的连锁餐厅", hint:"120 元，是路边摊的十倍，但稳妥", cost:120,
+     run:()=>({text:"冷气、塑封菜单、瓶装水。味道一般，但你坐了一个小时，缓了过来。", d:{budget:-120,stamina:+20},
+       lesson:"刚到的头两天肠胃还没适应，吃得保守一点很划算。"})}
+  ]
+},
+{
+  name:"开往阿格拉的列车", hi:"दिल्ली – आगरा", en:"Delhi – Agra", when:"第 2 天，下午",
+  scene:["对面铺位是一家四口。他们问你从哪里来、结婚没有、工资多少，聊了半个小时。","父亲从包里拿出一包已经拆开的饼干，又倒了一杯茶递给你。"],
+  options:()=>[
+    {label:"接过来，道谢", hint:"拒绝好像不太礼貌",
+     run:()=>{
+       if(hit(scam(.3))){
+         const t = theft(Math.min(s.budget,1200)); s.flags.phoneLost = true;
+         return {text:"你醒来时列车已经停在阿格拉，车厢空了。背包拉链开着，现金和手机都不见了。"+t.note, d:{budget:-t.loss,alert:+20,stamina:-10},
+           lesson:"在食物饮料里下药后行窃，是印度铁路警方长期提醒的作案手法。看起来像一家人，并不能说明什么。"};
+       }
+       return {text:"饼干有点受潮，茶很甜。小女儿一直盯着你的相机看，你让她拍了几张。<br><br>一个小时后，你的肚子开始绞痛。那壶茶是用站台水龙头的水泡的，没有烧开。", d:{stamina:+5,alert:-10,gut:-25},
+         lesson:"这家人没有恶意。但没烧开的水他们喝了没事，你不行。别人分享的食物有两层风险：少数是下了药的，更多的只是你的肠胃扛不住。"};
+     }},
+    {label:"说自己肠胃不好婉拒，拿出自己的零食分给孩子", hint:"你包里有两袋没拆的坚果",
+     run:()=>{ s.flags.familyTip = true;
+       return {text:"父亲笑着点头，说外国人到印度都这样。孩子们把坚果分了。下车前，他在你的本子上写了一家旅馆的名字：“我表弟开的。告诉他是拉杰什介绍的，他会来车站接你。”", d:{},
+         lesson:"拒绝可以很体面。给一个不伤人的理由，再回赠点东西，关系反而更近了。"};
+     }},
+    {label:"摇头拒绝，把背包抱紧", hint:"小心驶得万年船",
+     run:()=>({text:"父亲愣了一下，把饼干收了回去。剩下的两个小时没有人再跟你说话。你一直没敢合眼。", d:{alert:+10,stamina:-5},
+       lesson:"安全是保住了。但全程把每个人都当成威胁，既累，也会错过这趟旅行里最好的部分。"})}
+  ]
+},
+{
+  name:"阿格拉", hi:"आगरा छावनी", en:"Agra Cantt", when:"第 2 天，傍晚",
+  scene:["出站的时候天快黑了。旅馆在两公里外，房费 150 元到店付。","一个突突车司机迎上来：“去旅馆只要 20 卢比。明天我还可以免费带你游全城。”"],
+  options:()=>{
+    const canApp = s.flags.sim && !s.flags.phoneLost;
+    const o = [];
+    if(s.flags.familyTip) o.push({label:"打给列车上那家人推荐的旅馆，请他们来接", hint:"拉杰什的表弟",
+      run:()=>({text:"十五分钟后，一个年轻人骑着摩托车到了车站，举着写有你名字的纸板。房间很小，但很干净，屋顶能看到泰姬陵的轮廓。房费只收了你 100 元。", d:{budget:-110},
+        lesson:"旅途中攒下的善意是实打实的安全资源。"})});
+    o.push({label:"用打车软件叫车，把行程分享给朋友", hint:canApp?"价格透明，路线有记录":(s.flags.phoneLost?"你的手机在列车上丢了":"需要在行前准备里买当地电话卡"), disabled:!canApp,
+      run:()=>({text:"车五分钟就到了。你把实时行程发给了国内的朋友，十分钟后站在了旅馆前台。", d:{budget:-165,alert:+5},
+        lesson:"夜间出行优先选有记录的交通方式，并让至少一个人知道你在哪。"})});
+    o.push({label:"上他的车", hint:"20 卢比，才两块钱",
+      run:()=>({text:"今晚确实只收了 20 卢比。第二天的“免费游全城”，是三家大理石工艺品店和一家地毯店。你什么都没买，司机的脸色越来越差。<br><br>回程路上，他把车停进一条僻静的巷子，说包车一天要 3000 卢比。两个他的“朋友”从茶摊站起来，一左一右靠在车边。你把钱付了。", d:{budget:-152-260,stamina:-10,alert:+15},
+        lesson:"便宜得不合理的车费，利润来自商店佣金；佣金落空，就会变成强索车费。上车前说清“不去任何商店”并谈好总价，不要把第二天的行程交给一个陌生司机。"})});
+    o.push({label:"步行过去", hint:"两公里而已，省点钱", run:()=>({sub:true})});
+    return o;
+  }
+},
+{
+  name:"瓦拉纳西", hi:"वाराणसी", en:"Varanasi", when:"第 4 天，清晨",
+  scene:["夜车晚点了三个小时。你走到河坛的时候天刚亮，台阶上已经站满了晨浴的人，诵经声和钟声从四面传过来。","一个刚从水里上来的年轻人朝你招手：“下来吧！恒河母亲会洗掉一切。”"],
+  options:()=>[
+    {label:"脱了鞋，跟着人群下水游一圈", hint:"来都来了",
+     run:()=>{ s.gut=clamp(s.gut-50);
+       s.lessons.push("恒河对信徒是圣河，但瓦拉纳西这段河道接纳着整座城市的生活污水。本地人从小接触，外国游客下水，多半换来一场肠胃炎。可以看，不要下。");
+       return {sub:hospital(["水是温的，带一点土腥味。你游了十分钟，呛了两口水，上岸时觉得自己完成了一件大事。","当天夜里你开始发烧、呕吐、腹泻。这段河水里的粪大肠菌群，超出沐浴标准许多倍。到凌晨，你已经站不稳了。"])};
+     }},
+    {label:"雇一条小船，从河面上看日出和晨浴", hint:"60 元，船夫划一个小时", cost:60,
+     run:()=>({text:"船离岸二十米，整条河坛在晨光里铺开：洗衣的、沐浴的、做瑜伽的、放河灯的。船夫不怎么说话，只在经过火葬河坛时放慢了桨。", d:{budget:-60,stamina:+10},
+       lesson:"坐船是看恒河最好也最安全的方式。上船前谈好总价和时长，按船算，不按人算。"})},
+    {label:"沿着河坛往北走，去看火葬的河坛", hint:"不花钱",
+     run:()=>({text:"一个自称临终安养院义工的男人主动给你讲解了十分钟，然后把你带到一位老妇人面前：穷人买不起火葬的木柴，你要捐多少公斤？一公斤 500 卢比。<br><br>你说不捐。台阶上又站起来三个人，堵住了你来的路。你掏了钱。", d:{budget:-280,alert:+10},
+       lesson:"火葬河坛的“木柴捐款”是瓦拉纳西最出名的骗局。不要跟任何主动讲解的人走，更不要跟着上楼或进屋。"})}
+  ]
+},
+{
+  name:"药店街", hi:"दवा बाज़ार", en:"Medicine Market", when:"第 4 天，下午",
+  scene:["回国前一天，表姐发来微信：听说印度的仿制药便宜，能不能帮她带几盒？药名和预算都发过来了。","你刚在一家药店门口停下，一个穿衬衫的男人用中文跟你打招呼：“买药？店里贵。我是厂家代理，仓库就在后面，价格只要三分之一。很多中国人找我拿货，带回去转手能翻几倍。”"],
+  options:()=>[
+    {label:"跟他去仓库看看", hint:"三分之一的价格，还能赚一笔",
+     run:()=>({text:"仓库是一间堆满纸箱的民房。他说现金不够没关系，可以刷卡。刷卡机“失败”了三次，他让你再试一次。<br><br>走出巷子，你的手机震个不停：四笔扣款，卡被刷空了。你跑回去，门已经锁上。纸箱里的药盒上没有批号。", d:{budget:-s.budget},
+       lesson:"主动搭话、会说中文、报价低得离谱、还教你转卖赚钱，四样凑齐就是骗局。假药和盗刷，是药品代购里最常见的两种损失。",
+       over:{title:"留在印度打工",bg:"paharganj",lead:"机票钱没了，卡也冻结了。帕哈甘吉那家青旅的老板说，前台正缺一个会说中文的人，包一张床位，每天 300 卢比。你算了算，攒够一张回国的机票，要三个多月。"}})},
+    {label:"进正规连锁药店，问清楚要不要处方", hint:"200 元，只够买一个疗程", cost:200,
+     run:()=>({text:"店员先问你要处方。表姐拍了一张医院开的发过来，店员核对之后拿了药，开了带批号的发票。只够一个疗程，但每一盒都查得到来源。", d:{budget:-200},
+       lesson:"正规药店会要处方、开发票，药盒上有批号。少量自用带回是一回事，帮人代购转卖在国内有法律风险。"})},
+    {label:"回复表姐：药不能乱带，先去问医生", hint:"不花钱，可能要挨一顿埋怨",
+     run:()=>({text:"表姐回了一个“哦”。过了十分钟又发来一句：行吧，你自己注意安全。", d:{},
+       lesson:"处方药换一个国家，成分、剂量和真伪你都无从判断。拒绝帮带，是对双方都负责的做法。"})}
+  ]
+}
+];
+
+function hospital(intro){ return {
+  bg:"hospital", mission:["急诊","选一家医院"],
+  scene:[...intro,"旅馆老板帮你叫了一辆车。司机回头问：去政府医院，还是私立医院？"],
+  options:()=>[
+    {label:"私立医院", hint:s.flags.insurance?"拨打保险救援热线，费用直付，自付 200 元":"你没有保险，押金 900 元", cost:s.flags.insurance?200:900,
+     run:()=>({text:"急诊医生看了一眼就让你躺下：急性细菌性肠胃炎，严重脱水。单人病房，有空调，护士每小时来换一次药。输了一天半的液，你虚弱地出了院。"+(s.flags.insurance?"账单由保险公司直接结了。":"出院结账时，押金一分没剩。"), d:{budget:-(s.flags.insurance?200:900),gut:45-s.gut,stamina:45-s.stamina},
+       lesson:s.flags.insurance?"印度大城市的私立医院水平不差，问题只是贵。有保险时，一场急病只是丢了一天半行程。":"印度大城市的私立医院水平不差，问题只是贵。没有保险，一次住院就花掉了大半趟旅行的钱。"})},
+    {label:"政府医院", hint:"几乎不花钱，但要等",
+     run:()=>({text:"挂号处排了两百多人。你在走廊的长椅上蜷了七个小时，身边的地上也躺着人。傍晚终于挂上了水，病床是和另一位病人合用的。<br><br>医生的诊断很快，也很准：急性细菌性肠胃炎，严重脱水。两天后你出了院，腿还是软的。", d:{budget:-30,gut:40-s.gut,stamina:35-s.stamina},
+       lesson:"政府医院几乎免费，医生经验丰富，但病人太多。脱水的人最耗不起的就是等。"})}
+  ]
+};}
+
+const NIGHT = {
+  bg:"paharganj", mission:["高烧","撑过今晚"],
+  scene:["冰甘蔗汁很解渴。下午三点，你开始满街找厕所。","到了夜里情况变了：高烧 39 度，上吐下泻，喝一口水吐一口。你蜷在旅馆的床上，天花板在转。"],
+  options:()=>[
+    {label:"去医院", hint:"旅馆老板说可以帮你叫车",
+     run:()=>({sub:hospital(["你扶着墙走到前台。老板看了你一眼，放下了手里的茶杯。"])})},
+    {label:"冲口服补液盐，小口慢喝，躺一天观察", hint:s.flags.ors?"你带了一盒":"你没有带补液盐", disabled:!s.flags.ors,
+     run:()=>{ s.flags.ors=false;
+       return {text:"你每五分钟抿一小口。后半夜终于不吐了，烧在第二天中午退了下去。你丢了一天行程，瘦了一圈，但站得起来。", d:{gut:45-s.gut,stamina:-20},
+         lesson:"腹泻真正危险的是脱水。口服补液盐小口慢喝，是世卫组织推荐的首选处理；24 小时内不见好转或开始便血，仍然要去医院。"};
+     }},
+    {label:"吞两片止泻药，明早照常赶路", hint:"楼下药店就有，见效快",
+     run:()=>({text:"腹泻确实止住了，烧没有退。第二天上午，你在火车站排队时眼前一黑。<br><br>再睁开眼是在医院的走廊里，手背上扎着针。", d:{budget:-(s.flags.insurance?200:Math.min(s.budget,900)),stamina:-100},
+       lesson:"发烧的细菌性腹泻不能靠止泻药硬压。它止住的只是症状，病菌和毒素被留在了肠道里，脱水也没有解决。",
+       over:{title:"住院，行程终止",bg:"hospital",lead:"医生说再晚半天送来会很危险。你在病床上躺了五天，然后直接去了机场。"}})}
+  ]
+};
+
+const WALK = {
+  mission:["被跟踪","甩掉身后的人"],
+  scene:["你走出了车站前的灯光。路越走越暗，店铺一家家拉下卷帘门。","你注意到身后有个人，你快他也快，你停他也停。已经跟了两个路口。"],
+  options:()=>[
+    {label:"走进前面那家还亮着灯的药店", hint:"里面有店员和两个顾客",
+     run:()=>({text:"你在店里买了瓶水，站在柜台边看了五分钟手机。再出门的时候，那个人已经不见了。店主帮你叫了一辆车。", d:{budget:-170,stamina:-10,alert:+10},
+       lesson:"感觉被跟踪时，走向有人、有灯的地方并停留。不用确认对方是否真有恶意，也不用觉得不好意思。"})},
+    {label:"给旅馆打电话，请他们派人出来接", hint:s.flags.phoneLost?"你的手机在列车上丢了":"边走边大声说话", disabled:!!s.flags.phoneLost,
+     run:()=>({text:"你用英语大声说出自己的位置，说两分钟后见。身后的脚步声慢了下来，然后拐进了另一条路。", d:{budget:-150,stamina:-10,alert:+10},
+       lesson:"让对方知道有人在等你、知道你在哪，这通常就够了。"})},
+    {label:"拐进小巷抄近路，加快脚步甩掉他", hint:"地图显示能省五分钟",
+     run:()=>({text:"巷子里没有灯。他追上来拽住了你的背包带。你松手让他扯走了侧袋里的零钱包，一路跑到了大路上。人没事。", d:{budget:-350,stamina:-20,alert:-20},
+       lesson:"不要为了甩掉人而走进更偏僻的地方。被抢时，放弃财物是对的。"})}
+  ]
+};
+
+/* ---------- scene illustrations ---------- */
+const many=(n,fn)=>Array.from({length:n},(_,i)=>fn(i)).join("");
+const rnd=i=>((Math.sin(i*127.1+3.3)*43758.5453)%1+1)%1;
+const R=(x,y,w,h,f,x2="")=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${f}" ${x2}/>`;
+const wrap=inner=>`<svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+const sky=(id,stops)=>`<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">${stops.map(([o,c])=>`<stop offset="${o}" stop-color="${c}"/>`).join("")}</linearGradient></defs><rect width="800" height="600" fill="url(#${id})"/>`;
+const glow=(x,y,r,c,o=.35)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" opacity="${o*.4}"/><circle cx="${x}" cy="${y}" r="${r*.55}" fill="${c}" opacity="${o}"/>`;
+const person=(x,y,s,c)=>`<g transform="translate(${x},${y}) scale(${s})"><circle cy="-30" r="6" fill="${c}"/><rect x="-7" y="-23" width="14" height="26" rx="5" fill="${c}"/></g>`;
+const crowd=(n,y0,y1,cols,seed=0)=>many(n,i=>{const t=rnd(i+seed+50);const y=y0+(y1-y0)*t;return person(20+rnd(i+seed)*760,y,.7+t*.9,cols[i%cols.length]);});
+const auto=(x,y,s=1)=>`<g transform="translate(${x},${y}) scale(${s})"><path d="M0,-40 Q5,-62 40,-62 H80 Q92,-62 92,-40 Z" fill="#F5C518"/><rect y="-40" width="96" height="26" rx="4" fill="#1F7A4D"/><rect x="14" y="-56" width="26" height="16" fill="#1c2430" opacity=".6"/><circle cx="16" cy="-10" r="9" fill="#111"/><circle cx="78" cy="-10" r="9" fill="#111"/></g>`;
+const taxi=(x,y)=>`<g transform="translate(${x},${y})"><rect y="-22" width="80" height="18" rx="5" fill="#0c0c0c"/><path d="M14,-22 L24,-38 H58 L68,-22 Z" fill="#F5C518"/><circle cx="18" cy="-3" r="7"/><circle cx="62" cy="-3" r="7"/><circle cx="80" cy="-14" r="3" fill="#FFE9A0"/></g>`+glow(700>x?x+84:x,y-14,18,"#FFE9A0",.3);
+const taj=(cx,by,s,f)=>`<g transform="translate(${cx},${by}) scale(${s})" fill="${f}"><rect x="-175" y="-20" width="350" height="20"/><rect x="-80" y="-110" width="160" height="90"/><rect x="-40" y="-125" width="80" height="16"/><path d="M-45,-122 C-62,-175 -30,-202 0,-218 C30,-202 62,-175 45,-122 Z"/><rect x="-1.5" y="-240" width="3" height="24"/><circle cx="-62" cy="-120" r="17"/><circle cx="62" cy="-120" r="17"/><rect x="-168" y="-175" width="12" height="156"/><rect x="156" y="-175" width="12" height="156"/><circle cx="-162" cy="-178" r="9"/><circle cx="162" cy="-178" r="9"/><rect x="-124" y="-150" width="10" height="130"/><rect x="114" y="-150" width="10" height="130"/><circle cx="-119" cy="-152" r="7"/><circle cx="119" cy="-152" r="7"/><path d="M-22,-20 V-76 Q0,-102 22,-76 V-20 Z" fill="#000" opacity=".18"/><path d="M-66,-20 V-58 Q-54,-72 -42,-58 V-20 Z M42,-20 V-58 Q54,-72 66,-58 V-20 Z" fill="#000" opacity=".12"/></g>`;
+const SARI=["#D7263D","#F5C518","#1B998B","#E87D1E","#7B3FA0","#2F5FA8","#F2F2F2"];
+
+const SCENES={
+start:()=>wrap(sky("g0",[[0,"#1F3A6B"],[.5,"#C96F6A"],[.72,"#F6B565"]])+glow(560,400,90,"#FFE2A0",.6)+
+  `<path d="M0,430 Q200,400 400,425 T800,415 V600 H0 Z" fill="#3D5A3A"/>`+
+  many(6,i=>`<circle cx="${60+i*150}" cy="${418-rnd(i)*14}" r="${16+rnd(i+9)*12}" fill="#2C4630"/>`)+
+  R(0,470,800,130,"#2A2A30")+R(0,462,800,6,"#55504A")+
+  many(5,i=>`<g transform="translate(${40+i*150},0)">${R(0,395,144,62,"#2F5FA8",'rx="5"')}${R(0,425,144,6,"#F5C518")}${many(5,j=>R(10+j*27,404,18,16,"#FFE2A0",'rx="2" opacity=".9"'))}<circle cx="26" cy="460" r="8" fill="#111"/><circle cx="118" cy="460" r="8" fill="#111"/></g>`)),
+
+airport:()=>wrap(sky("g1",[[0,"#070C22"],[.55,"#1E2A55"],[1,"#3A2E4F"]])+
+  many(45,i=>`<circle cx="${rnd(i)*800}" cy="${rnd(i+70)*190}" r="${.6+rnd(i+20)}" fill="#fff" opacity="${.3+rnd(i+5)*.6}"/>`)+
+  `<polygon points="30,250 92,140 120,140 108,250" fill="#C9D3E6"/><polygon points="92,140 120,140 116,168 82,168" fill="#D7263D"/>`+
+  R(612,105,16,140,"#151c36")+R(594,88,52,24,"#2A3560",'rx="3"')+R(599,94,42,9,"#9FE0FF")+glow(620,98,30,"#9FE0FF",.3)+
+  `<path d="M100,250 Q400,160 700,250 Z" fill="#2A3560"/>`+R(100,250,600,100,"#1B2340")+
+  many(15,i=>R(118+i*38,266,26,62,"#F7D774",'opacity=".88"'))+glow(400,300,260,"#F7D774",.12)+
+  R(0,350,800,250,"#11162A")+R(0,395,800,3,"#F5C518",'opacity=".5"')+
+  many(4,i=>R(60+i*220,150+0,5,205,"#0c1022")+glow(62+i*220,150,26,"#FFD98A",.55))+
+  taxi(140,392)+taxi(330,392)+taxi(520,392)+taxi(240,470)+
+  crowd(12,400,560,["#0a0d1c","#1a2038","#242b4a"],3)),
+
+station:()=>wrap(sky("g2",[[0,"#A9CBE6"],[.6,"#EAD9B8"],[1,"#E5C79A"]])+glow(650,90,70,"#FFF3C4",.7)+
+  R(372,110,56,90,"#B5503C")+`<path d="M366,110 L400,82 L434,110 Z" fill="#8E3B2C"/><circle cx="400" cy="140" r="16" fill="#F6F1E4"/><path d="M400,140 V129 M400,140 H408" stroke="#222" stroke-width="2"/>`+
+  R(70,190,660,14,"#8E3B2C")+R(84,204,632,146,"#B5503C")+
+  many(9,i=>`<path d="M${104+i*68},350 V268 Q${128+i*68},236 ${152+i*68},268 V350 Z" fill="#5E2419"/>`)+
+  R(318,212,164,34,"#F5C518",'stroke="#111" stroke-width="3"')+R(336,224,128,4,"#111")+R(352,233,96,3,"#111")+
+  R(0,350,800,250,"#8D8A86")+R(0,350,800,8,"#6E6A66")+
+  auto(60,430,1)+auto(600,440,1.1)+auto(250,410,.8)+
+  crowd(26,380,580,SARI,11)),
+
+bazaar:()=>{
+  const L=(t,h)=>[300*t,140*t+(600-320*t)*h];
+  const aw=(t1,t2,h,c,flip)=>{const a=L(t1,h),b=L(t2,h),o1=70*(1-t1),o2=70*(1-t2);
+    const pts=[[a[0],a[1]],[b[0],b[1]],[b[0]+o2,b[1]+o2*.45],[a[0]+o1,a[1]+o1*.45]].map(p=>(flip?800-p[0]:p[0])+","+p[1]).join(" ");
+    return `<polygon points="${pts}" fill="${c}"/>`;};
+  const sign=(t,h,c,flip)=>{const a=L(t,h),w=46*(1-t),x=flip?800-a[0]-w:a[0];return R(x,a[1],w,w*.5,c,'stroke="#2a1c16" stroke-width="1"');};
+  return wrap(sky("g3",[[0,"#F1C987"],[.6,"#F4DDB0"],[1,"#E9A86B"]])+
+  R(300,140,200,280,"#F6E4C0")+`<g fill="#DDAE86"><circle cx="400" cy="330" r="34"/><rect x="352" y="330" width="96" height="90"/><rect x="330" y="290" width="8" height="130"/><rect x="462" y="290" width="8" height="130"/></g>`+
+  `<polygon points="0,0 300,140 300,420 0,600" fill="#7A4A3A"/><polygon points="800,0 500,140 500,420 800,600" fill="#8C5A44"/>`+
+  `<polygon points="0,0 300,140 300,200 0,150" fill="#5E3629" opacity=".5"/><polygon points="800,0 500,140 500,200 800,150" fill="#6B4132" opacity=".5"/>`+
+  `<polygon points="300,420 500,420 800,600 0,600" fill="#6B5B52"/>`+
+  many(4,i=>aw(i*.22,i*.22+.17,.4,SARI[i],false)+aw(i*.22+.04,i*.22+.2,.43,SARI[(i+2)%5],true))+
+  many(5,i=>sign(i*.17+.05,.26+rnd(i)*.14,SARI[(i+3)%6],i%2===0)+sign(i*.17+.1,.2+rnd(i+4)*.16,SARI[(i+1)%6],i%2===1))+
+  many(7,i=>`<path d="M${rnd(i)*200},${60+rnd(i+3)*140} Q400,${200+rnd(i+8)*120} ${600+rnd(i+6)*200},${50+rnd(i+2)*150}" fill="none" stroke="#2a1c16" stroke-width="1.6" opacity=".8"/>`)+
+  many(22,i=>{const t=rnd(i+31);const y=425+t*170;const half=100+(y-420)*1.6;return person(400-half+rnd(i+77)*half*2,y,.5+t*1.1,SARI[i%7]);}));
+},
+
+train:()=>wrap(R(0,0,800,600,"#A9BCCD")+R(0,0,800,36,"#8FA3B6")+R(0,48,800,24,"#2F5FA8")+
+  `<defs><linearGradient id="g4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F9DC9A"/><stop offset="1" stop-color="#F3A65A"/></linearGradient></defs>`+
+  R(205,95,390,250,"#5C6B7A",'rx="14"')+R(222,112,356,216,"url(#g4)",'rx="6"')+glow(500,170,46,"#FFF6D0",.8)+
+  `<path d="M222,262 Q320,244 420,258 T578,250 V328 H222 Z" fill="#7C9A3E"/>`+R(222,290,356,14,"#E6C23A")+R(222,304,356,24,"#5F7F33")+
+  many(5,i=>`<circle cx="${250+i*74}" cy="${252-rnd(i)*10}" r="${12+rnd(i+2)*9}" fill="#4E6B2E"/>`)+
+  R(452,150,5,150,"#4a3a2a")+R(432,160,45,4,"#4a3a2a")+
+  many(4,i=>R(222,150+i*44,356,6,"#3E4A57"))+
+  R(0,250,180,120,"#3A6FBF",'rx="10"')+R(620,250,180,120,"#3A6FBF",'rx="10"')+R(0,360,330,240,"#2F5FA8",'rx="12"')+R(470,360,330,240,"#2F5FA8",'rx="12"')+
+  R(340,348,120,10,"#6B4A2E")+R(395,358,10,60,"#4a3a2a")+
+  R(368,318,26,30,"#C9CED6",'rx="2"')+R(368,318,26,5,"#8A5A2B")+`<path d="M376,312 q-6,-10 0,-18 M386,312 q6,-10 0,-20" stroke="#fff" stroke-width="2" fill="none" opacity=".7"/>`+
+  R(410,333,40,15,"#D7263D",'rx="2"')+R(418,337,24,3,"#F5C518")),
+
+paharganj:()=>wrap(sky("g8",[[0,"#2A2F5E"],[.6,"#D98A6A"],[1,"#F3C58A"]])+
+  many(7,i=>{const x=i*118-14,hh=190+rnd(i+13)*120,y=420-hh,c=["#C76B4A","#D9A441","#3F7F8C","#B24A6A","#DCC59C","#5A6FA8","#A85A3C"][i],n=["#FF4FA3","#39E6B0","#FFD23F"][i%3];
+    return R(x,y,114,hh,c)+R(x,y,114,8,"#000",'opacity=".2"')+many(Math.floor(hh/60),r=>many(3,k=>R(x+12+k*26,y+24+r*58,16,26,rnd(i*9+r*3+k)>.6?"#FFE2A0":"#2b2233",'opacity=".9"'))+R(x+6,y+54+r*58,80,4,"#000",'opacity=".25"'))+
+      glow(x+101,y+70,34,n,.45)+R(x+92,y+26,18,92,n,'rx="3"')+many(5,k=>R(x+97,y+34+k*16,8,8,"#1a1022",'opacity=".7"'));})+
+  R(0,420,800,180,"#3A3340")+R(0,420,800,6,"#241f29")+
+  many(6,i=>`<path d="M0,${150+i*22} Q400,${230+i*14+rnd(i)*40} 800,${140+i*26}" fill="none" stroke="#1a1420" stroke-width="1.5" opacity=".8"/>`)+
+  auto(520,500,1.2)+crowd(12,440,580,SARI,61)),
+
+ganga:()=>wrap(sky("g9",[[0,"#E88F6E"],[.45,"#F7CB95"],[.6,"#FBE6C2"]])+glow(560,285,120,"#FFF3C4",.8)+`<circle cx="560" cy="292" r="26" fill="#FFF8DC"/>`+
+  R(0,300,800,300,"#C99F78")+R(0,296,800,6,"#B58E72")+`<polygon points="520,302 600,302 700,600 380,600" fill="#FFE9B8" opacity=".5"/>`+
+  many(6,i=>{const x=i*74-10,hh=90+rnd(i+90)*90,c=["#C4573A","#E0A04A","#B8456A","#D9C29A","#A85432","#E3B25A"][i];
+    return R(x,300-hh,70,hh,c)+(i%2?`<path d="M${x+18},${300-hh} Q${x+35},${300-hh-70} ${x+35},${300-hh-95} Q${x+35},${300-hh-70} ${x+52},${300-hh} Z" fill="${c}"/>`:R(x+8,300-hh-10,54,10,c))+many(2,k=>R(x+14+k*26,300-hh+20,14,22,"#3a2420",'opacity=".6"'));})+
+  many(7,i=>R(0,296+i*20,430-i*8+i*i*6,20,i%2?"#D9B892":"#C9A57E"))+
+  many(5,i=>`<path d="M${60+i*80},${330+i*14} a22,22 0 0 1 44,0 Z" fill="${SARI[i]}"/>`+R(81+i*80,330+i*14,2,22,"#3a2420"))+
+  many(14,i=>person(30+rnd(i+120)*380,345+rnd(i+130)*90,.7+rnd(i+3)*.5,SARI[i%7]))+
+  many(3,i=>{const x=470+i*110,y=380+i*70,k=1+i*.35;return `<g transform="translate(${x},${y}) scale(${k})"><path d="M0,0 Q50,22 100,0 L88,14 H12 Z" fill="#3a2420"/>${person(35,2,.6,"#F2F2F2")}${person(62,2,.6,"#D7263D")}</g>`;})+
+  many(6,i=>`<path d="M${300+i*60},${80+rnd(i)*80} q8,-8 16,0 q8,-8 16,0" fill="none" stroke="#5b3a2e" stroke-width="2"/>`)),
+
+hospital:()=>wrap(R(0,0,800,330,"#D5E4D8")+R(0,330,800,120,"#9FBFAA")+R(0,326,800,8,"#7FA08B")+R(0,450,800,150,"#BDB7A8")+
+  many(9,i=>R(i*100,450,2,150,"#A8A294"))+R(0,520,800,2,"#A8A294")+
+  R(80,60,640,10,"#F4F7EE")+glow(400,66,200,"#F4FFE8",.25)+
+  R(360,110,80,80,"#fff",'rx="6"')+R(390,122,20,56,"#D7263D")+R(372,140,56,20,"#D7263D")+
+  R(40,120,130,150,"#EAF3F7",'stroke="#7FA08B" stroke-width="6"')+R(102,120,6,150,"#7FA08B")+
+  `<g transform="translate(640,70)"><circle r="10" fill="#6d7a72"/>${many(3,i=>`<rect x="8" y="-7" width="70" height="14" rx="7" fill="#8b978f" transform="rotate(${i*120})"/>`)}</g>`+
+  many(3,i=>{const x=60+i*250;return R(x,400,190,12,"#6d7a72")+R(x+6,412,6,50,"#6d7a72")+R(x+178,412,6,50,"#6d7a72")+R(x,372,190,30,"#F7F7F2",'rx="6"')+R(x+6,360,46,20,"#fff",'rx="6"')+`<path d="M${x+50},376 q60,-34 136,0 v14 h-136 Z" fill="${["#7FB3C8","#C8A27F","#8FC8A0"][i]}"/><circle cx="${x+30}" cy="362" r="11" fill="#8a6a55"/>`+
+    R(x+150,250,4,160,"#8b978f")+R(x+134,250,36,4,"#8b978f")+R(x+138,256,16,30,"#E8F2FF",'rx="4" stroke="#8b978f"')+`<path d="M${x+146},286 q0,50 -40,84" fill="none" stroke="#8b978f" stroke-width="1.5"/>`;})+
+  crowd(14,480,590,["#6b7d75","#8a7f6e","#59646b","#7c6a6a"],151)),
+
+pharmacy:()=>wrap(R(0,0,800,600,"#E4CFAA")+R(0,0,800,60,"#C9B48E")+R(0,450,800,150,"#8E8A84")+R(0,450,800,8,"#6d6963")+
+  R(130,80,540,64,"#1F9D55")+R(160,96,32,32,"#fff",'rx="4"')+R(172,100,8,24,"#1F9D55")+R(164,108,24,8,"#1F9D55")+R(210,100,240,10,"#fff")+R(210,118,150,6,"#fff",'opacity=".8"')+
+  R(130,144,540,306,"#2E2420")+glow(400,200,220,"#FFF1C8",.18)+
+  many(4,r=>R(146,160+r*52,508,5,"#6B4A2E")+many(22,k=>{const hh=22+rnd(r*31+k)*18;return R(150+k*23,165+r*52+(42-hh),18,hh,["#F2F2F2","#D7263D","#2F5FA8","#F5C518","#1B998B","#E87D1E","#7B3FA0"][Math.floor(rnd(r*17+k*5)*7)]);}))+
+  R(130,372,540,78,"#8A5A2B")+R(144,384,512,40,"#BFD9DE",'opacity=".55"')+many(9,k=>R(156+k*56,394,40,22,k%2?"#F2F2F2":"#F5C518"))+
+  person(400,372,1.8,"#3b4a5a")+
+  many(8,k=>R(140+k*70,144,3,40+rnd(k)*30,"#C9B48E")+many(4,j=>R(134+k*70,150+j*14,15,10,SARI[(k+j)%7])))+
+  `<path d="M110,144 L130,110 H670 L690,144 Z" fill="#157a41"/>`+
+  person(250,520,1.9,"#5a4636")+person(585,540,2.1,"#2b3040")+crowd(6,470,580,SARI,171)),
+
+agra:()=>wrap(sky("g5",[[0,"#241846"],[.45,"#9C4168"],[.68,"#F2935C"]])+glow(400,392,110,"#FFD08A",.7)+
+  taj(560,392,.42,"#3A2444")+
+  many(16,i=>{const h=50+rnd(i)*90,w=40+rnd(i+5)*40,x=i*52-10;return R(x,400-h,w,h,"#1A1230")+(rnd(i+9)>.45?R(x+10,400-h+14,9,11,"#F7D774",'opacity=".85"'):"")+(rnd(i+2)>.6?R(x+w-18,400-h+34,9,11,"#F7D774",'opacity=".7"'):"");})+
+  R(0,400,800,200,"#140F20")+R(0,440,800,3,"#F5C518",'opacity=".25"')+
+  many(3,i=>R(120+i*280,250,5,160,"#0e0a18")+glow(122+i*280,250,30,"#FFC870",.55))+
+  `<polygon points="436,452 640,420 640,500" fill="#FFE9A0" opacity=".2"/>`+auto(300,500,1.5)+glow(440,455,14,"#FFE9A0",.9)+
+  crowd(8,420,470,["#0e0a18","#1f1633"],21)),
+
+walk:()=>wrap(sky("g6",[[0,"#04060D"],[1,"#0E1424"]])+glow(640,80,38,"#DDE6FF",.5)+`<circle cx="640" cy="80" r="14" fill="#E8EEFF"/>`+
+  `<polygon points="0,60 300,190 300,400 0,560" fill="#0A0E1A"/><polygon points="800,60 500,190 500,400 800,560" fill="#0C111F"/>`+
+  many(5,i=>`<polygon points="${i*56+10},${440-i*18} ${i*56+50},${428-i*18} ${i*56+50},${300-i*10} ${i*56+10},${290-i*14}" fill="#131a2c"/>`)+
+  `<polygon points="300,400 500,400 800,560 800,600 0,600 0,560" fill="#11141d"/>`+
+  `<polygon points="560,300 700,270 700,470 560,420" fill="#EFF5CF"/><polygon points="560,420 700,470 520,600 300,600" fill="#EFF5CF" opacity=".14"/>`+glow(630,370,120,"#EFF5CF",.3)+
+  `<path d="M618,305 h16 v-14 h14 v14 h16 v14 h-16 v14 h-14 v-14 h-16 Z" fill="#1F9D55" transform="translate(-10,6) scale(.9)"/>`+
+  R(575,350,110,70,"#C9D6A8",'opacity=".5"')+
+  R(398,205,4,195,"#0a0d16")+glow(400,205,16,"#FFC870",.18)+
+  person(430,500,1.5,"#232a3d")+person(150,455,1,"#06080f")),
+
+taj:()=>wrap(sky("g7",[[0,"#E9A0A0"],[.4,"#F8C9A0"],[.7,"#FDF0CC"]])+glow(400,330,150,"#FFF6D0",.8)+
+  `<circle cx="400" cy="345" r="34" fill="#FFF8DC"/>`+
+  R(0,395,800,205,"#5E7A4A")+R(0,395,800,10,"#E3C4B8")+
+  taj(400,398,1.05,"#EBCFC6")+
+  `<polygon points="372,408 428,408 540,600 260,600" fill="#F9D2AE"/><polygon points="392,408 408,408 440,600 360,600" fill="#FFF3D6" opacity=".7"/>`+
+  many(6,i=>{const t=i/5,y=420+t*150,o=60+t*150,rx=7+t*10,ry=20+t*34;return `<ellipse cx="${400-o}" cy="${y}" rx="${rx}" ry="${ry}" fill="#2F4A30"/><ellipse cx="${400+o}" cy="${y}" rx="${rx}" ry="${ry}" fill="#2F4A30"/>`;})+
+  crowd(10,470,580,["#3b3040","#4a3b52","#2b2433"],41))
+};
+let curBg=null;
+const IMAGES={};   // 场景名 -> 图片地址（data URI）。填了就用图片，没填用矢量图
+function setBg(k){ if(!k||k===curBg) return; curBg=k; document.getElementById("bg").innerHTML = IMAGES[k] ? `<img src="${IMAGES[k]}" alt="">` : SCENES[k](); }
+const BGS=["airport","paharganj","station","bazaar","train","agra","ganga","pharmacy"];
+
+/* ---------- sound: synthesized drone, heartbeat and stings ---------- */
+const AU={ctx:null,muted:false,level:.15,pulse:true,calm:false,next:0};
+const TENSE=[146.83,155.56,185,196,220,233.08,277.18,293.66];   // D Bhairav
+const CALM=[293.66,329.63,369.99,440,493.88,587.33];            // D 大调五声
+function initAudio(){
+  if(AU.ctx){ AU.ctx.resume(); return; }
+  const C=window.AudioContext||window.webkitAudioContext; if(!C) return;
+  try{
+    const c=AU.ctx=new C();
+    AU.master=c.createGain(); AU.master.gain.value=AU.muted?0:.6; AU.master.connect(c.destination);
+    AU.filter=c.createBiquadFilter(); AU.filter.type="lowpass"; AU.filter.frequency.value=420; AU.filter.Q.value=4;
+    const dg=c.createGain(); dg.gain.value=.15; AU.filter.connect(dg); dg.connect(AU.master);
+    [[73.42,-7],[73.42,7],[110,0],[146.83,4]].forEach(([f,d])=>{const o=c.createOscillator();o.type="sawtooth";o.frequency.value=f;o.detune.value=d;o.connect(AU.filter);o.start();});
+    const l=c.createOscillator(),lg=c.createGain(); l.frequency.value=.07; lg.gain.value=120; l.connect(lg); lg.connect(AU.filter.frequency); l.start();
+    AU.tg=c.createGain(); AU.tg.gain.value=0; AU.tg.connect(AU.master);
+    [[155.56,"sawtooth",.25],[207.65,"sine",.6],[311.13,"sine",.5]].forEach(([f,t,v])=>{const o=c.createOscillator();o.type=t;o.frequency.value=f;const tf=c.createBiquadFilter();tf.frequency.value=900;const g=c.createGain();g.gain.value=v;o.connect(tf);tf.connect(g);g.connect(AU.tg);o.start();});
+    AU.delay=c.createDelay(1); AU.delay.delayTime.value=.38;
+    const fb=c.createGain(); fb.gain.value=.45; AU.delay.connect(fb); fb.connect(AU.delay);
+    const dw=c.createGain(); dw.gain.value=.5; AU.delay.connect(dw); dw.connect(AU.master);
+    AU.next=c.currentTime+.3; setInterval(tick,90); setTension(AU.level);
+  }catch(e){ AU.ctx=null; }
+}
+function tick(){
+  const c=AU.ctx; if(!c||c.state!=="running") return;
+  if(AU.next<c.currentTime) AU.next=c.currentTime+.05;
+  while(AU.next<c.currentTime+.25){ beat(AU.next); AU.next+=60/(46+AU.level*58); }
+}
+function thump(t,v){
+  const c=AU.ctx,o=c.createOscillator(),g=c.createGain();
+  o.frequency.setValueAtTime(85,t); o.frequency.exponentialRampToValueAtTime(38,t+.16);
+  g.gain.setValueAtTime(v,t); g.gain.exponentialRampToValueAtTime(.001,t+.24);
+  o.connect(g); g.connect(AU.master); o.start(t); o.stop(t+.26);
+}
+function pluck(t){
+  const c=AU.ctx,sc=AU.calm?CALM:TENSE,o=c.createOscillator(),g=c.createGain();
+  o.type="triangle"; o.frequency.value=sc[Math.floor(Math.random()*sc.length)]*(!AU.calm&&Math.random()<.3?2:1);
+  g.gain.setValueAtTime(.0001,t); g.gain.exponentialRampToValueAtTime(.15,t+.012); g.gain.exponentialRampToValueAtTime(.001,t+1.5);
+  o.connect(g); g.connect(AU.master); g.connect(AU.delay); o.start(t); o.stop(t+1.6);
+}
+function beat(t){
+  if(AU.pulse){ thump(t,.45+AU.level*.4); thump(t+.17,.28+AU.level*.3); }
+  if(Math.random()<(AU.calm?.7:.35)) pluck(t+(Math.random()<.5?0:.3));
+}
+function setTension(l){
+  AU.level=Math.max(0,Math.min(1,l)); const c=AU.ctx; if(!c) return;
+  AU.tg.gain.setTargetAtTime(AU.level*AU.level*.09,c.currentTime,.8);
+  AU.filter.frequency.setTargetAtTime(300+AU.level*700,c.currentTime,.8);
+}
+function calmMode(on){ AU.calm=on; AU.pulse=!on; if(on) setTension(0); }
+function sting(big){
+  const c=AU.ctx; if(!c||c.state!=="running") return; const t=c.currentTime,len=big?2.4:1.1;
+  const f=c.createBiquadFilter(); f.frequency.value=1300; const g=c.createGain();
+  g.gain.setValueAtTime(big?.2:.11,t); g.gain.exponentialRampToValueAtTime(.001,t+len); f.connect(g); g.connect(AU.master); g.connect(AU.delay);
+  [110,116.54,164.81,233.08].forEach(fr=>{const o=c.createOscillator();o.type="sawtooth";o.frequency.setValueAtTime(fr,t);o.frequency.exponentialRampToValueAtTime(fr*.9,t+len);o.connect(f);o.start(t);o.stop(t+len);});
+  const n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*.4,c.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length);
+  const ng=c.createGain(); ng.gain.value=big?.25:.12; n.buffer=b; n.connect(ng); ng.connect(AU.master); n.start(t);
+  thump(t,.9);
+}
+const DANGER=[.4,.2,.35,.25,.45,.55,.3,.5];
+const dangerLevel=sub=>sub?.95:(DANGER[s.i]||.3)+(s.stamina<40?.2:0)+(s.budget<300?.15:0)+(s.gut<40?.1:0);
+document.getElementById("snd").onclick=e=>{
+  AU.muted=!AU.muted; if(!AU.muted) initAudio();
+  if(AU.ctx) AU.master.gain.setTargetAtTime(AU.muted?0:.6,AU.ctx.currentTime,.05);
+  e.currentTarget.textContent=AU.muted?"打开声音":"关闭声音";
+};
+
+/* ---------- render ---------- */
+const $ = id => document.getElementById(id);
+function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
+
+function drawStats(){
+  const bar=(lab,v,col,big,low)=>`<span>${lab}</span><div class="hpbar${big?" big":""}${low?" low":""}"><i style="width:${Math.max(0,Math.min(100,v))}%;background:${col}"></i>${big?`<em>${Math.round(v)}/100</em>`:""}</div>`;
+  $("stats").innerHTML = bar("体力",s.stamina,"var(--hp)",true,s.stamina<30)+bar("肠胃",s.gut,"var(--gut)",false,s.gut<40)+bar("警觉",s.alert,"var(--alert)",false,s.alert<30)+
+    `<div class="money${s.budget<300?" low":""}">¥ ${Math.round(s.budget).toLocaleString("en-US")}</div>`;
+}
+const MAP=[[40,250],[70,215],[110,225],[140,185],[185,180],[215,140],[255,150],[285,105]];
+function drawRoute(){
+  const i=Math.max(0,Math.min(MAP.length-1,s.i)), [x,y]=MAP[i], nx=MAP[i+1];
+  const ang = nx ? Math.atan2(nx[1]-y,nx[0]-x)*180/Math.PI+90 : 0;
+  let g=`<rect x="-60" y="-60" width="460" height="460" fill="#1b2026"/>`;
+  for(let k=-2;k<14;k++) g+=`<path d="M${k*30+8},-60 V400 M-60,${k*30+14} H400" stroke="#333b45" stroke-width="${k%3?2:5}"/>`;
+  g+=`<path d="M-60,330 L400,40" stroke="#333b45" stroke-width="6"/><rect x="150" y="205" width="24" height="18" fill="#27402f"/><rect x="60" y="150" width="34" height="26" fill="#27402f"/><rect x="230" y="60" width="28" height="22" fill="#27402f"/>`;
+  g+=`<polyline points="${MAP.map(p=>p.join(",")).join(" ")}" fill="none" stroke="#59626e" stroke-width="5" stroke-linejoin="round"/>`;
+  if(nx) g+=`<path d="M${x},${y} L${nx[0]},${nx[1]}" stroke="#F4C430" stroke-width="3.5" stroke-dasharray="5 4"/><circle cx="${nx[0]}" cy="${nx[1]}" r="5" fill="#F4C430" stroke="#000" stroke-width="1.5"/>`;
+  MAP.forEach((p,k)=>{ if(k<i) g+=`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="#9aa3ad"/>`; });
+  g+=`<path d="M0,-8 L6,7 L0,3.5 L-6,7 Z" fill="#fff" stroke="#000" stroke-width="1.2" transform="translate(${x},${y}) rotate(${ang})"/>`;
+  $("minimap").innerHTML=`<svg viewBox="${x-46} ${y-46} 92 92">${g}</svg>`;
+}
+const MISSION={"北印度生存指南":["行前准备","决定带什么上路"],"德里机场":["深夜抵达","找到去旅馆的车"],"帕哈甘吉":["落脚","找个地方睡几个小时"],"新德里火车站":["买票","买到去阿格拉的车票"],
+  "月光集市":["觅食","吃点东西，别把肚子吃坏"],"开往阿格拉的列车":["陌生人的饼干","平安抵达阿格拉"],"阿格拉":["天黑之前","到达两公里外的旅馆"],"泰姬陵":["日出","看太阳升起来"],
+  "瓦拉纳西":["恒河清晨","看一眼恒河"],"药店街":["表姐的委托","决定要不要帮带药"]};
+function setMission(m){ $("mission").innerHTML = m ? `<b>任务：【${m[0]}】</b>${m[1]}` : ""; $("mission").style.display = m ? "" : "none"; }
+function screenState(cls,title){ $("screen").className="screen"+(cls?" "+cls:""); $("banner").innerHTML = cls ? `<div><small>${cls==="fail"?"任务失败":"任务完成"}</small>${title}</div>` : ""; }
+function board(name,hi,en){
+  const n=Math.max(0,Math.min(STOPS.length,s.i+1));
+  $("place").innerHTML=`<span id="pname">${name}</span><small>${hi}　${en}${s.i>=0&&s.i<STOPS.length?`　${n}/${STOPS.length}`:""}</small>`;
+  setMission(MISSION[name]||null); return "";
+}
+function show(html){
+  $("stage").innerHTML = html; drawStats(); drawRoute();
+  document.querySelectorAll(".go").forEach(b=>b.insertAdjacentHTML("afterbegin",'<span class="key">空格</span>'));
+  window.scrollTo({top:0});
+}
+document.addEventListener("keydown",e=>{
+  if(e.target.tagName==="INPUT"||e.metaKey||e.ctrlKey||e.altKey) return;
+  const k=e.key.toLowerCase(), idx="abcd".indexOf(k)>=0?"abcd".indexOf(k):"1234".indexOf(k);
+  if(idx>=0&&k.length===1){ const b=document.querySelectorAll(".opt")[idx]; if(b&&!b.disabled) b.click(); return; }
+  if(k===" "||k==="enter"){ const b=document.querySelector(".go"); if(b&&e.target.tagName!=="BUTTON"){ e.preventDefault(); b.click(); } }
+});
+
+function start(){
+  s = fresh(); setBg("start"); screenState(""); calmMode(false); setTension(.15);
+  show(board("北印度生存指南","दिल्ली से वाराणसी","Delhi to Varanasi")+
+  `<div class="panel"><p>四天，八站，从德里机场到泰姬陵的日出，再到恒河边。每一站你都要在省钱、省力和安全之间做选择。</p>
+   <p>赶路、高温和时差会让你每过一站消耗 12 点体力和 5 点肠胃，吃饭和休息可以补回体力。</p>
+   <p>全程你只有 1400 元预算，住宿、车票、吃饭、泰姬陵门票（110 元）和去瓦拉纳西的夜车（90 元）都从里面出。出发前可以先做些准备，每项都要花钱，但路上可能用得到。</p>
+   <div class="prep">
+     <label><input type="checkbox" data-k="ticket" data-c="70"><span>提前在官方 App 订火车票，70 元<small>到站后直接进站，不用和任何人打交道</small></span></label>
+     <label><input type="checkbox" data-k="sim" data-c="40"><span>买一张当地电话卡，40 元<small>没有它用不了打车软件</small></span></label>
+     <label><input type="checkbox" data-k="ors" data-c="20"><span>带一盒口服补液盐，20 元<small>腹泻时自动使用一次</small></span></label>
+     <label><input type="checkbox" data-k="insurance" data-c="150"><span>买旅行保险，150 元<small>大额财物损失赔付一半</small></span></label>
+   </div>
+   <button class="go" id="depart">出发</button></div>`);
+  $("depart").onclick=()=>{ if(!AU.muted) initAudio();
+    document.querySelectorAll(".prep input:checked").forEach(c=>{s.flags[c.dataset.k]=true;s.budget-=+c.dataset.c;});
+    next();
+  };
+}
+
+function next(){ s.i++; while(s.i<NODES.length && NODES[s.i].skip && NODES[s.i].skip()) s.i++; if(s.i===6 && !s.flags.taj){ s.i=5; return sunrise(); } if(s.i>=NODES.length) return ending(null); scene(NODES[s.i]); }
+
+function scene(n, sub){
+  const src = sub || n, opts = src.options(); setBg(sub?(sub.bg||"walk"):BGS[s.i]); calmMode(false); setTension(dangerLevel(sub));
+  show(board(n.name,n.hi,n.en)+
+    `<div class="panel">${sub?"":`<p class="when">${n.when}</p>`}${src.scene.map(p=>`<p>${p}</p>`).join("")}</div>
+     <div class="opts">${opts.map((o,i)=>`<button class="opt" data-i="${i}" ${(o.disabled||o.cost>s.budget)?"disabled":""}><span class="key">${"ABCD"[i]}</span><span>${o.label}<small>${o.cost>s.budget?"钱不够了":(o.hint||"")}</small></span></button>`).join("")}</div>`);
+  if(sub&&sub.mission) setMission(sub.mission);
+  document.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+    const r = opts[+b.dataset.i].run();
+    if(r.sub) return scene(n, r.sub===true?WALK:r.sub);
+    resolve(n,r);
+  });
+}
+
+const LABEL={budget:"预算",gut:"肠胃",stamina:"体力",alert:"警觉"};
+function resolve(n,r){
+  const d = Object.assign({},r.d), notes=[];
+  if(!r.over){ d.stamina=(d.stamina||0)-12; d.gut=(d.gut||0)-5; }   // 每一站的基础消耗：赶路、高温、时差
+  // 节点结算
+  const gutAfter = clamp(s.gut+(d.gut||0)), alertAfter = clamp(s.alert+(d.alert||0));
+  if(!r.over && gutAfter<40){
+    if(s.flags.ors){ s.flags.ors=false; d.gut=(d.gut||0)+35; notes.push("你冲了一袋口服补液盐，慢慢喝完，肚子稳住了一些。"); }
+    else { d.stamina=(d.stamina||0)-15; notes.push("腹泻让你脱水乏力，体力额外下降。没有补液盐，只能硬撑。"); }
+  }
+  if(!r.over && alertAfter>70){ d.stamina=(d.stamina||0)-5; notes.push("你一直绷着神经，这很消耗体力。"); }
+  for(const k in d){ if(k==="budget") s.budget=Math.max(0,s.budget+d[k]); else s[k]=clamp(s[k]+d[k]); }
+  s.lessons.push(r.lesson);
+  const chips = Object.keys(d).filter(k=>d[k]).map(k=>`<li class="${d[k]>0?"up":"down"}">${LABEL[k]} ${d[k]>0?"+":""}${Math.round(d[k])}</li>`).join("");
+  const dead = r.over || (s.stamina<=0 ? "stamina" : s.budget<=0 ? "budget" : null);
+  if(dead){ sting(true); setTension(1); } else if((d.budget||0)<=-250||(d.gut||0)<=-25||(d.stamina||0)<=-30) sting(false);
+  show(board(n.name,n.hi,n.en)+
+    `<div class="panel"><p>${r.text}</p>${notes.map(t=>`<p class="note">${t}</p>`).join("")}
+     ${chips?`<ul class="deltas">${chips}</ul>`:""}
+     <p class="lesson">${r.lesson}</p>
+     <button class="go" id="cont">${dead?"查看结局":"继续前进"}</button></div>`);
+  $("cont").onclick=()=> dead ? ending(dead) : next();
+}
+
+function sunrise(){
+  if(s.budget<110){ return ending({title:"止步东门",bg:"agra",lead:"外国游客的门票加陵墓参观费要 110 元。你把口袋翻了个遍，不够。你站在围墙外面，看着天一点点亮了起来。"}); }
+  s.budget-=110;
+  s.stamina=clamp(s.stamina+20); s.alert=50; s.flags.taj=true; setBg("taj"); calmMode(true);
+  const go = s.budget>=90; if(!go) s.flags.short=true;
+  show(board("泰姬陵","ताज महल","Taj Mahal")+
+    `<div class="panel"><p class="when">第 3 天，清晨 5 点 40 分</p>
+     <p>你在东门排到了前五十个。天是灰蓝色的，草地上还有露水。</p>
+     <p>然后太阳从你身后升起来，白色大理石先变成粉色，再变成金色。周围几百个人，没有一个人说话。</p>
+     <p>这两天的所有麻烦，在这一刻都显得值得。</p>
+     <ul class="deltas"><li class="down">门票 -110</li><li class="up">体力 +20</li><li class="up">警觉恢复到 50</li></ul>
+     ${go?"<p>今晚有一班去瓦拉纳西的夜车，硬卧 90 元。</p>":"<p class=\"note\">去瓦拉纳西的夜车要 90 元，你的钱不够了。行程在这里结束。</p>"}
+     <button class="go" id="cont">${go?"坐夜车去瓦拉纳西":"查看这趟旅程"}</button></div>`);
+  $("cont").onclick=()=>{ if(!go) return ending(null); s.budget-=90; next(); };
+}
+
+function ending(dead){
+  setBg(dead&&dead.bg||(dead?"start":s.flags.short?"taj":"ganga"));
+  if(dead){ calmMode(false); AU.pulse=false; setTension(.5); } else calmMode(true);
+  const title = dead&&dead.title || (dead==="stamina"?"体力耗尽":dead==="budget"?"预算见底":"抵达");
+  const lead = dead&&dead.lead ? dead.lead : !dead&&s.flags.short ? "你看到了泰姬陵的日出，但钱只够走到这里。恒河留给下一次。" : dead==="stamina" ? "你在旅馆床上躺了两天，改签了回国的机票。这趟行程提前结束了。"
+    : dead==="budget" ? "钱包空了。你给家里打了电话，订了最近一班回程。"
+    : s.budget>=300 && s.gut>=55 ? "钱没丢，肚子没坏，日出和恒河都看到了。你像个老手一样走完了全程。"
+    : s.budget>=120 ? "交了一点学费，但整体顺利。明天的航班回家。"
+    : "这一路磕磕绊绊，学费交了不少。好在人平安，日出也看到了。";
+  show(board(title,"यात्रा समाप्त","Journey's end")+
+    (screenState(dead?"fail":"pass",title),"")+
+    `<div class="panel"><p>${lead}</p>
+     <p>你这一路学到的：</p>
+     <ul class="lessons">${s.lessons.map(l=>`<li>${l}</li>`).join("")}</ul>
+     <button class="go" id="again">再走一次</button></div>`);
+  $("again").onclick=start;
+}
+
+start();
+</script>
+</body>
+</html>
